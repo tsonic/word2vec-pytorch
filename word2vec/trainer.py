@@ -54,6 +54,7 @@ class Word2VecTrainer:
                     running_loss = running_loss * 0.9 + loss.item() * 0.1
                     if i > 0 and i % 500 == 0:
                         print(" Loss: " + str(running_loss))
+            print(" Loss: " + str(running_loss))
 
             self.skip_gram_model.save_embedding(self.data.id2word, self.output_file_name)
 

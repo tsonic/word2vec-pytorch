@@ -129,9 +129,9 @@ class Word2vecDataset(Dataset):
                     # df['positive'] = df['positive'].astype(int)
                     # df['negative'] = self.data.getNegatives(None, len(df))
                     # ret = list(df.itertuples(index=False, name=None))
-                    
+
                     ret = [(u, v, self.data.getNegatives(v, 5)) for i, u in enumerate(word_ids) for j, v in
-                            enumerate(word_ids[max(i - boundary, 0):i + boundary]) if u != v]
+                            enumerate(word_ids[max(i - boundary, 0):i + boundary + 1]) if u != v]
                     return ret
 
     @staticmethod

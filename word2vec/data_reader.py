@@ -111,7 +111,7 @@ class Word2vecDataset(Dataset):
                                 w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
 
                     # boundary = np.random.randint(1, self.window_size)
-                    boundary = 2
+                    boundary = self.window_size
 
                     # df_list = []
                     # for i in range(-boundary, boundary + 1):

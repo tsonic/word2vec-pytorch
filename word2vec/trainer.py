@@ -9,12 +9,17 @@ from word2vec.model import SkipGramModel
 
 class Word2VecTrainer:
     def __init__(self, input_file, output_file, emb_dimension=100, batch_size=32, window_size=5, iterations=3,
-                 initial_lr=0.001, min_count=12, num_workers=0):
+                 initial_lr=0.001, min_count=12, num_workers=0, collate_fn='custom'):
+
 
         self.data = DataReader(input_file, min_count)
         dataset = Word2vecDataset(self.data, window_size)
+        if collate_fn == 'custom':
+            collate_fn = dataset.collate
+        else:
+            collate_fn = None
         self.dataloader = DataLoader(dataset, batch_size=batch_size,
-                                     shuffle=False, num_workers=num_workers, collate_fn=dataset.collate)
+                                     shuffle=False, num_workers=num_workers, collate_fn=collate_fn)
 
         self.output_file_name = output_file
         self.emb_size = len(self.data.word2id)

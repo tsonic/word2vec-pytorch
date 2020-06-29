@@ -86,30 +86,36 @@ class Word2vecDataset(Dataset):
             lines = f.readlines()
             self.words = list(itertools.chain(*[l.split() for l in lines]))
             self.words = [w for w in self.words if w in self.data.word2id]
-        
-
+        boundary = self.window_size
+        df_list = []
+        for i in range(-boundary, boundary + 1):
+            if i == 0:
+                continue
+            df = pd.DataFrame({'word':self.words})
+            df['id'] = df['word'].map(self.data.word2id)
+            df['positive'] = df['id'].shift(i)
+            # efficient remove of na
+            if i > 0:
+                df = df.iloc[i:,]
+            elif i < 0:
+                df = df.iloc[:i,]
+            df_list.append(df)
+        df = pd.concat(df_list)
+        df['positive'] = df['positive'].astype(int)
+        df['negative'] = np.split(self.data.getNegatives(None, len(df) * 5), 5)
+        self.lookup = list(df.sample(frac=1.0, replace=False).itertuples(index=False, name=None))
 
     def __len__(self):
         # return self.data.sentences_count
         return len(self.words)
 
     def __getitem__(self, idx):
-        if idx == 0:
-          print('new code!')
 
         # if len(self.words) > 1:
         #     word_ids = [self.data.word2id[w] for w in words if
         #                 w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
-        word = self.words[idx]
-        boundary = self.window_size
-        u = self.data.word2id[word]
-        neighbor_word_ids = [self.data.word2id[self.words[j]] for j in 
-                            range(max(idx - boundary, 1), 
-                                min(idx + boundary + 1, len(self.words)-1)) 
-                            if j != idx]
-
-        ret = [(u, v, self.data.getNegatives(v, 5)) for v in neighbor_word_ids if u != v]
-        return ret
+        
+        return self.lookup[idx]
 
     @staticmethod
     def collate(batches):
@@ -117,6 +123,8 @@ class Word2vecDataset(Dataset):
         # all_v = [v for batch in batches for _, v, _ in batch if len(batch) > 0]
         # all_neg_v = [neg_v for batch in batches for _, _, neg_v in batch if len(batch) > 0]
 
+        # batches is a list of list, first flatten to single list, then split 
+        # each element tuple vertically into 3 long tuples
         all_u,all_v,all_neg_v = zip(*itertools.chain(*batches))
 
         return torch.LongTensor(all_u), torch.LongTensor(all_v), torch.LongTensor(all_neg_v)

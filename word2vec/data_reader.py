@@ -117,7 +117,11 @@ class Word2vecDataset(Dataset):
         gc.collect()
         neg_split = np.split(neg, len(df))
         df['negative'] = neg_split
-        self.lookup = list(df.sample(frac=1.0, replace=False).itertuples(index=False, name=None))
+        del neg, neg_split
+        gc.collect()
+        df = df.sample(frac=1.0, replace=False)
+        gc.collect()
+        self.lookup = list(df.itertuples(index=False, name=None))
 
     def __len__(self):
         # return self.data.sentences_count

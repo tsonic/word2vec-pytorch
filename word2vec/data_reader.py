@@ -98,9 +98,11 @@ class Word2vecDataset(Dataset):
         df_short = pd.DataFrame({'word':self.words})
         df_short['id'] = df_short['word'].map(self.data.word2id).astype(np.int32)
         df_short.drop('word', axis=1, inplace=True)
+        print(df_short)
         for i in range(-boundary, boundary + 1):
             if i == 0:
                 continue
+            print(i)
             df = df_short.copy()
             df['positive'] = df['id'].shift(i)
             df = df.dropna(subset=['positive'])

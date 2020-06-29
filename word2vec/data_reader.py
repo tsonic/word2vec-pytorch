@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from itertools import repeat
+import itertools
 
 np.random.seed(12345)
 
@@ -80,59 +81,29 @@ class Word2vecDataset(Dataset):
     def __init__(self, data, window_size):
         self.data = data
         self.window_size = window_size
-        self.input_file = open(data.inputFileName, encoding="utf8")
+        #self.input_file = open(data.inputFileName, encoding="utf8")
+        with open(data.inputFileName, encoding="utf8") as f:
+            lines = f.readlines()
+            self.words = list(itertools.chain(*[l.split() for l in lines]))
 
     def __len__(self):
-        return self.data.sentences_count
+        # return self.data.sentences_count
+        return len(self.words)
 
     def __getitem__(self, idx):
         if idx == 0:
           print('new code!')
-        # df = pd.DataFrame.from_records([{'word':k, 'id':v} for k,v in self.data.word2id.items()])
-        # df_discards = pd.DataFrame.from_records([{'id':i, 'discard':discard} for i, discard in enumerate(self.data.discards)])
-        # df = df.set_index('word').merge(df_discards, on='id')
-        while True:
-            line = self.input_file.readline()
-            if not line:
-                self.input_file.seek(0, 0)
-                line = self.input_file.readline()
 
-            if len(line) > 1:
-                words = line.split()
+        # if len(self.words) > 1:
+        #     word_ids = [self.data.word2id[w] for w in words if
+        #                 w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
 
-                if len(words) > 1:
-                    # s = pd.Series(words, name = 'words')
-                    # s = s.map(self.data.word2id)
-                    # s = s.dropna().astype(int)
-                    # filter_idx = np.random.rand(len(s)) < self.data.discards[s.values]
-                    # word_ids = s.loc[filter_idx].tolist()
+        boundary = self.window_size
 
-                    word_ids = [self.data.word2id[w] for w in words if
-                                w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
-
-                    # boundary = np.random.randint(1, self.window_size)
-                    boundary = self.window_size
-
-                    # df_list = []
-                    # for i in range(-boundary, boundary + 1):
-                    #     if i == 0:
-                    #         continue
-                    #     df = pd.DataFrame({'word':word_ids})
-                    #     df['positive'] = df['word'].shift(i)
-                    #     # efficient remove of na
-                    #     if i > 0:
-                    #         df = df.iloc[i:,]
-                    #     elif i < 0:
-                    #         df = df.iloc[:i,]
-                    #     df_list.append(df)
-                    # df = pd.concat(df_list * 5)
-                    # df['positive'] = df['positive'].astype(int)
-                    # df['negative'] = self.data.getNegatives(None, len(df))
-                    # ret = list(df.itertuples(index=False, name=None))
-
-                    ret = [(u, v, self.data.getNegatives(v, 5)) for i, u in enumerate(word_ids) for j, v in
-                            enumerate(word_ids[max(i - boundary, 0):i + boundary + 1]) if u != v]
-                    return ret
+        ret = [(self.words[idx], v, self.data.getNegatives(v, 5)) for j, v in
+                self.words[max(idx - boundary, 0):min(idx + boundary + 1, len(self.words) -1)]
+                if self.words[idx] != v]
+        return ret
 
     @staticmethod
     def collate(batches):

@@ -71,6 +71,7 @@ class DataReader:
         self.negatives = np.repeat(*zip(*enumerate(count)))
         #self.negatives = np.array(self.negatives, dtype=np.int32)
         np.random.shuffle(self.negatives)
+        gc.collect()
 
     def getNegatives(self, target, size):  # TODO check equality with target
         response = self.negatives[self.negpos:self.negpos + size]

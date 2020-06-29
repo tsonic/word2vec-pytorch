@@ -115,7 +115,7 @@ class Word2vecDataset(Dataset):
         neg= self.data.getNegatives(None, len(df) * 5)
         self.data.negatives = None
         gc.collect()
-        neg_split = np.split(neg, 5)
+        neg_split = np.split(neg, len(df))
         df['negative'] = neg_split
         self.lookup = list(df.sample(frac=1.0, replace=False).itertuples(index=False, name=None))
 

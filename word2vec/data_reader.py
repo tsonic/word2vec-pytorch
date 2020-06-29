@@ -117,6 +117,6 @@ class Word2vecDataset(Dataset):
         # all_v = [v for batch in batches for _, v, _ in batch if len(batch) > 0]
         # all_neg_v = [neg_v for batch in batches for _, _, neg_v in batch if len(batch) > 0]
 
-        all_u,all_v,all_neg_v = zip(*batches)
+        all_u,all_v,all_neg_v = zip(*itertools.chain(*batches))
 
         return torch.LongTensor(all_u), torch.LongTensor(all_v), torch.LongTensor(all_neg_v)

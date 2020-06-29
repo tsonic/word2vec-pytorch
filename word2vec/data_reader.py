@@ -93,15 +93,18 @@ class Word2vecDataset(Dataset):
         boundary = self.window_size
         df_list = []
         print('Creating training dataframe...')
+        df_short = pd.DataFrame({'word':self.words})
+        df_short['id'] = df_short['word'].map(self.data.word2id)
+        df_short.drop('word', axis=1, inplace=True)
         for i in range(-boundary, boundary + 1):
             if i == 0:
                 continue
-            df = pd.DataFrame({'word':self.words})
-            df['id'] = df['word'].map(self.data.word2id)
+            df = df_short.copy()
             df['positive'] = df['id'].shift(i)
             df = df.dropna(subset=['positive'])
             df['positive'] = df['positive'].astype(int)
             df = df.query('id != positive')
+            df.drop('word', axis=1, inplace=True)
             # # efficient remove of na
             # if i > 0:
             #     df = df.iloc[i:,]
@@ -110,7 +113,7 @@ class Word2vecDataset(Dataset):
             df_list.append(df)
         gc.collect()
         df = pd.concat(df_list)
-        del df_list, lines
+        del df_list, lines, df_short
         gc.collect()
         print('Creating negative samples...')
         neg= self.data.getNegatives(None, len(df) * 5)

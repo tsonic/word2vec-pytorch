@@ -84,11 +84,13 @@ class Word2vecDataset(Dataset):
         self.window_size = window_size
         #self.input_file = open(data.inputFileName, encoding="utf8")
         with open(data.inputFileName, encoding="utf8") as f:
+            print('Creating words list...')
             lines = f.readlines()
             self.words = list(itertools.chain(*[l.split() for l in lines]))
             self.words = [w for w in self.words if w in self.data.word2id]
         boundary = self.window_size
         df_list = []
+        print('Creating training dataframe...')
         for i in range(-boundary, boundary + 1):
             if i == 0:
                 continue
@@ -105,6 +107,7 @@ class Word2vecDataset(Dataset):
         df = df.dropna(subsets=['positive'])
         df['positive'] = df['positive'].astype(int)
         df = df.query('id != positive')
+        print('Creating negative samples...')
         df['negative'] = np.split(self.data.getNegatives(None, len(df) * 5), 5)
         self.lookup = list(df.sample(frac=1.0, replace=False).itertuples(index=False, name=None))
 

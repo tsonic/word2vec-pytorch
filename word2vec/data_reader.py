@@ -104,7 +104,7 @@ class Word2vecDataset(Dataset):
             #     df = df.iloc[:i,]
             df_list.append(df)
         df = pd.concat(df_list)
-        df = df.dropna(subsets=['positive'])
+        df = df.dropna(subset=['positive'])
         df['positive'] = df['positive'].astype(int)
         df = df.query('id != positive')
         print('Creating negative samples...')

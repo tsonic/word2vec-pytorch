@@ -64,10 +64,12 @@ class DataReader:
         pow_frequency = np.array(list(self.word_frequency.values())) ** 0.5
         words_pow = sum(pow_frequency)
         ratio = pow_frequency / words_pow
-        count = np.round(ratio * DataReader.NEGATIVE_TABLE_SIZE)
-        for wid, c in enumerate(count):
-            self.negatives += [wid] * int(c)
-        self.negatives = np.array(self.negatives, dtype=np.int32)
+        count = np.round(ratio * DataReader.NEGATIVE_TABLE_SIZE).astype(np.int32)
+        # for wid, c in enumerate(count):
+        #     self.negatives += [wid] * int(c)
+            
+        self.negatives = np.repeat(*zip(*enumerate(count)))
+        #self.negatives = np.array(self.negatives, dtype=np.int32)
         np.random.shuffle(self.negatives)
 
     def getNegatives(self, target, size):  # TODO check equality with target

@@ -118,9 +118,10 @@ class Word2vecDataset(Dataset):
         neg= self.data.getNegatives(None, len(df) * 5)
         self.data.negatives = None
         gc.collect()
-        neg_split = np.split(neg, len(df))
-        df['negative'] = neg_split
-        del neg, neg_split
+        neg_reshape = neg.reshape((len(df),5))
+        neg_reshape_list = list(neg_reshape)
+        df['negative'] = neg_reshape_list
+        del neg, neg_reshape, neg_reshape_list
         gc.collect()
         print('Shuffling samples...')
         df = df.sample(frac=1.0, replace=False)

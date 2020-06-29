@@ -9,7 +9,8 @@ np.random.seed(12345)
 
 
 class DataReader:
-    NEGATIVE_TABLE_SIZE = 5e8
+
+    NEGATIVE_TABLE_SIZE = 1e9
 
     def __init__(self, inputFileName, min_count):
 

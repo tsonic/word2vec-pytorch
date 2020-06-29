@@ -97,12 +97,15 @@ class Word2vecDataset(Dataset):
         # if len(self.words) > 1:
         #     word_ids = [self.data.word2id[w] for w in words if
         #                 w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
-
+        word = self.words[idx]
         boundary = self.window_size
+        u = self.data.word2id[word]
+        neighbor_word_ids = [self.data.word2id[self.words[j]] for j in 
+                            range(max(idx - boundary, 1), 
+                                min(idx + boundary + 1, len(self.words)-1)) 
+                            if j != idx]
 
-        ret = [(self.words[idx], v, self.data.getNegatives(v, 5)) for v in
-                self.words[max(idx - boundary, 0):min(idx + boundary + 1, len(self.words) -1)]
-                if self.words[idx] != v]
+        ret = [(u, v, self.data.getNegatives(v, 5)) for v in neighbor_word_ids if u != v]
         return ret
 
     @staticmethod

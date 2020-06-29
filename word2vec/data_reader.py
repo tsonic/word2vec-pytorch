@@ -67,7 +67,7 @@ class DataReader:
         count = np.round(ratio * DataReader.NEGATIVE_TABLE_SIZE)
         for wid, c in enumerate(count):
             self.negatives += [wid] * int(c)
-        self.negatives = np.array(self.negatives)
+        self.negatives = np.array(self.negatives, dtype=np.int32)
         np.random.shuffle(self.negatives)
 
     def getNegatives(self, target, size):  # TODO check equality with target
@@ -94,7 +94,7 @@ class Word2vecDataset(Dataset):
         df_list = []
         print('Creating training dataframe...')
         df_short = pd.DataFrame({'word':self.words})
-        df_short['id'] = df_short['word'].map(self.data.word2id)
+        df_short['id'] = df_short['word'].map(self.data.word2id).astype(np.int32)
         df_short.drop('word', axis=1, inplace=True)
         for i in range(-boundary, boundary + 1):
             if i == 0:
@@ -102,7 +102,7 @@ class Word2vecDataset(Dataset):
             df = df_short.copy()
             df['positive'] = df['id'].shift(i)
             df = df.dropna(subset=['positive'])
-            df['positive'] = df['positive'].astype(int)
+            df['positive'] = df['positive'].astype(np.int32)
             df = df.query('id != positive')
             # # efficient remove of na
             # if i > 0:
@@ -150,4 +150,4 @@ class Word2vecDataset(Dataset):
         # each element tuple vertically into 3 long tuples
         all_u,all_v,all_neg_v = zip(*batches)
 
-        return torch.LongTensor(all_u), torch.LongTensor(all_v), torch.LongTensor(all_neg_v)
+        return torch.IntTensor(all_u), torch.IntTensor(all_v), torch.IntTensor(all_neg_v)

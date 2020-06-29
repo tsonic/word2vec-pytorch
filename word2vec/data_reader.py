@@ -9,7 +9,7 @@ np.random.seed(12345)
 
 
 class DataReader:
-    NEGATIVE_TABLE_SIZE = 1e8
+    NEGATIVE_TABLE_SIZE = 5e8
 
     def __init__(self, inputFileName, min_count):
 
@@ -94,14 +94,16 @@ class Word2vecDataset(Dataset):
             df = pd.DataFrame({'word':self.words})
             df['id'] = df['word'].map(self.data.word2id)
             df['positive'] = df['id'].shift(i)
-            # efficient remove of na
-            if i > 0:
-                df = df.iloc[i:,]
-            elif i < 0:
-                df = df.iloc[:i,]
+            # # efficient remove of na
+            # if i > 0:
+            #     df = df.iloc[i:,]
+            # elif i < 0:
+            #     df = df.iloc[:i,]
             df_list.append(df)
         df = pd.concat(df_list)
+        df = df.dropna(subsets=['positive'])
         df['positive'] = df['positive'].astype(int)
+        df = df.query('id != positive')
         df['negative'] = np.split(self.data.getNegatives(None, len(df) * 5), 5)
         self.lookup = list(df.sample(frac=1.0, replace=False).itertuples(index=False, name=None))
 

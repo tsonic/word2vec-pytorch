@@ -65,11 +65,11 @@ class DataReader:
         words_pow = sum(pow_frequency)
         ratio = pow_frequency / words_pow
         count = np.round(ratio * DataReader.NEGATIVE_TABLE_SIZE)#.astype(np.int32)
-        for wid, c in enumerate(count):
-            self.negatives += [wid] * int(c)
+        # for wid, c in enumerate(count):
+        #     self.negatives += [wid] * int(c)
             
-        # self.negatives = np.repeat(*zip(*enumerate(count)))
-        self.negatives = np.array(self.negatives, dtype=np.int32)
+        self.negatives = np.repeat(*zip(*enumerate(count))).astype(np.int32)
+        #self.negatives = np.array(self.negatives, dtype=np.int32)
         np.random.shuffle(self.negatives)
 
     def getNegatives(self, target, size):  # TODO check equality with target
@@ -98,7 +98,7 @@ class Word2vecDataset(Dataset):
         df_short = pd.DataFrame({'word':self.words})
         df_short['id'] = df_short['word'].map(self.data.word2id).astype(np.int32)
         df_short.drop('word', axis=1, inplace=True)
-        print(df_short)
+        print(df_short.columns)
         for i in range(-boundary, boundary + 1):
             if i == 0:
                 continue

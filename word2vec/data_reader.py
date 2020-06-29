@@ -125,6 +125,6 @@ class Word2vecDataset(Dataset):
 
         # batches is a list of list, first flatten to single list, then split 
         # each element tuple vertically into 3 long tuples
-        all_u,all_v,all_neg_v = zip(*itertools.chain(*batches))
+        all_u,all_v,all_neg_v = zip(*batches)
 
         return torch.LongTensor(all_u), torch.LongTensor(all_v), torch.LongTensor(all_neg_v)

@@ -100,7 +100,7 @@ class Word2vecDataset(Dataset):
 
         boundary = self.window_size
 
-        ret = [(self.words[idx], v, self.data.getNegatives(v, 5)) for j, v in
+        ret = [(self.words[idx], v, self.data.getNegatives(v, 5)) for v in
                 self.words[max(idx - boundary, 0):min(idx + boundary + 1, len(self.words) -1)]
                 if self.words[idx] != v]
         return ret

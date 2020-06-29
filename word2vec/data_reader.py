@@ -85,6 +85,7 @@ class Word2vecDataset(Dataset):
         with open(data.inputFileName, encoding="utf8") as f:
             lines = f.readlines()
             self.words = list(itertools.chain(*[l.split() for l in lines]))
+            self.words = [w for w in words if w in self.word2id]
 
     def __len__(self):
         # return self.data.sentences_count

@@ -104,7 +104,6 @@ class Word2vecDataset(Dataset):
             df = df.dropna(subset=['positive'])
             df['positive'] = df['positive'].astype(int)
             df = df.query('id != positive')
-            df.drop('word', axis=1, inplace=True)
             # # efficient remove of na
             # if i > 0:
             #     df = df.iloc[i:,]

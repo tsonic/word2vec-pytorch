@@ -112,7 +112,11 @@ class Word2vecDataset(Dataset):
         df = pd.concat(df_list)
         
         print('Creating negative samples...')
-        df['negative'] = np.split(self.data.getNegatives(None, len(df) * 5), 5)
+        neg= self.data.getNegatives(None, len(df) * 5)
+        self.data.negatives = None
+        gc.collect()
+        neg_split = np.split(neg, 5)
+        df['negative'] = neg_split
         self.lookup = list(df.sample(frac=1.0, replace=False).itertuples(index=False, name=None))
 
     def __len__(self):

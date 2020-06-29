@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import Dataset
 from itertools import repeat
 import itertools
+import gc
 
 np.random.seed(12345)
 
@@ -59,6 +60,7 @@ class DataReader:
         self.discards = np.sqrt(t / f) + (t / f)
 
     def initTableNegatives(self):
+        print('Initializing negative samples')
         pow_frequency = np.array(list(self.word_frequency.values())) ** 0.5
         words_pow = sum(pow_frequency)
         ratio = pow_frequency / words_pow
@@ -97,16 +99,18 @@ class Word2vecDataset(Dataset):
             df = pd.DataFrame({'word':self.words})
             df['id'] = df['word'].map(self.data.word2id)
             df['positive'] = df['id'].shift(i)
+            df = df.dropna(subset=['positive'])
+            df['positive'] = df['positive'].astype(int)
+            df = df.query('id != positive')
             # # efficient remove of na
             # if i > 0:
             #     df = df.iloc[i:,]
             # elif i < 0:
             #     df = df.iloc[:i,]
             df_list.append(df)
+        gc.collect()
         df = pd.concat(df_list)
-        df = df.dropna(subset=['positive'])
-        df['positive'] = df['positive'].astype(int)
-        df = df.query('id != positive')
+        
         print('Creating negative samples...')
         df['negative'] = np.split(self.data.getNegatives(None, len(df) * 5), 5)
         self.lookup = list(df.sample(frac=1.0, replace=False).itertuples(index=False, name=None))

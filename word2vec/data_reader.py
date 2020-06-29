@@ -65,11 +65,11 @@ class DataReader:
         words_pow = sum(pow_frequency)
         ratio = pow_frequency / words_pow
         count = np.round(ratio * DataReader.NEGATIVE_TABLE_SIZE)#.astype(np.int32)
-        for wid, c in enumerate(count):
-            self.negatives += [wid] * int(c)
-            
-        # self.negatives = np.repeat(*zip(*enumerate(count)))
-        self.negatives = np.array(self.negatives, dtype=np.int32)
+        # for wid, c in enumerate(count):
+        #     self.negatives += [wid] * int(c)
+        df = pd.DataFrame.from_records(enumerate(count))
+        self.negatives = np.repeat(df[0].values.astype(np.int32), df[1].values)
+        #self.negatives = np.array(self.negatives, dtype=np.int32)
         np.random.shuffle(self.negatives)
 
     def getNegatives(self, target, size):  # TODO check equality with target

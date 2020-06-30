@@ -5,13 +5,14 @@ from torch.utils.data import Dataset
 from itertools import repeat
 import itertools
 import gc
+import ipdb
 
 np.random.seed(12345)
 
 
 class DataReader:
 
-    NEGATIVE_TABLE_SIZE = 1e9
+    NEGATIVE_TABLE_SIZE = 1e8
 
     def __init__(self, inputFileName, min_count):
 
@@ -23,7 +24,7 @@ class DataReader:
         self.id2word = dict()
         self.sentences_count = 0
         self.token_count = 0
-        self.word_frequency = dict()
+        self.word_frequency = []
 
         self.inputFileName = inputFileName
         self.read_words(min_count)
@@ -50,25 +51,25 @@ class DataReader:
                 continue
             self.word2id[w] = wid
             self.id2word[wid] = w
-            self.word_frequency[wid] = c
+            self.word_frequency.append(c)
             wid += 1
         print("Total embeddings: " + str(len(self.word2id)))
 
     def initTableDiscards(self):
         t = 0.0001
-        f = np.array(list(self.word_frequency.values())) / self.token_count
+        f = np.array(self.word_frequency) / self.token_count
         self.discards = np.sqrt(t / f) + (t / f)
 
     def initTableNegatives(self):
-        print('Initializing negative samples')
-        pow_frequency = np.array(list(self.word_frequency.values())) ** 0.5
+        print('Initializing negative samples', flush=True)
+        pow_frequency = np.array(self.word_frequency) ** 0.5
         words_pow = sum(pow_frequency)
         ratio = pow_frequency / words_pow
         count = np.round(ratio * DataReader.NEGATIVE_TABLE_SIZE)#.astype(np.int32)
         # for wid, c in enumerate(count):
         #     self.negatives += [wid] * int(c)
         df = pd.DataFrame.from_records(enumerate(count))
-        self.negatives = np.repeat(df[0].values.astype(np.int32), df[1].values)
+        self.negatives = np.repeat(df[0].values, df[1].astype(int).values)
         #self.negatives = np.array(self.negatives, dtype=np.int32)
         np.random.shuffle(self.negatives)
 
@@ -88,17 +89,16 @@ class Word2vecDataset(Dataset):
         self.window_size = window_size
         #self.input_file = open(data.inputFileName, encoding="utf8")
         with open(data.inputFileName, encoding="utf8") as f:
-            print('Creating words list...')
+            print('Creating words list...', flush=True)
             lines = f.readlines()
             self.words = list(itertools.chain(*[l.split() for l in lines]))
             self.words = [w for w in self.words if w in self.data.word2id]
         boundary = self.window_size
         df_list = []
-        print('Creating training dataframe...')
+        print('Creating training dataframe...', flush=True)
         df_short = pd.DataFrame({'word':self.words})
-        df_short['id'] = df_short['word'].map(self.data.word2id).astype(np.int32)
+        df_short['id'] = df_short['word'].map(self.data.word2id)
         df_short.drop('word', axis=1, inplace=True)
-        print(df_short.columns)
         for i in range(-boundary, boundary + 1):
             if i == 0:
                 continue
@@ -106,34 +106,35 @@ class Word2vecDataset(Dataset):
             df = df_short.copy()
             df['positive'] = df['id'].shift(i)
             df = df.dropna(subset=['positive'])
-            df['positive'] = df['positive'].astype(np.int32)
+            df['positive'] = df['positive']
             df = df.query('id != positive')
-            print(i, df.shape)
-            print(df.memory_usage(deep=True).sum())
             # # efficient remove of na
             # if i > 0:
             #     df = df.iloc[i:,]
             # elif i < 0:
             #     df = df.iloc[:i,]
             df_list.append(df)
-        gc.collect()
         df = pd.concat(df_list)
         del df_list, lines, df_short
         gc.collect()
-        print('Creating negative samples...')
-        neg= self.data.getNegatives(None, len(df) * 5)
-        self.data.negatives = None
-        gc.collect()
-        neg_reshape = neg.reshape((len(df),5))
-        neg_reshape_list = list(neg_reshape)
-        df['negative'] = neg_reshape_list
-        del neg, neg_reshape, neg_reshape_list
-        gc.collect()
-        print('Shuffling samples...')
+        print('Shuffling samples...', flush=True)
         df = df.sample(frac=1.0, replace=False)
-        gc.collect()
-        print('Generating sample look up tables...')
-        self.lookup = list(df.itertuples(index=False, name=None))
+        print('Creating negative samples...', flush=True)
+        # neg= self.data.getNegatives(None, len(df) * 5)
+        # self.data.negatives = None
+        # gc.collect()
+        # neg_reshape = neg.reshape((len(df),5))
+        # neg_reshape_list = list(neg_reshape)
+        # df['negative'] = neg_reshape_list
+        # del neg, neg_reshape, neg_reshape_list
+        # gc.collect()
+
+        # print('Generating sample look up tables...', flush=True)
+        # self.lookup = list(df.itertuples(index=False, name=None))
+        self.id_list = df['id'].values
+        self.positive_list = df['positive'].values
+        print('Dataload initializing finished!', flush=True)
+
 
     def __len__(self):
         # return self.data.sentences_count
@@ -145,7 +146,7 @@ class Word2vecDataset(Dataset):
         #     word_ids = [self.data.word2id[w] for w in words if
         #                 w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
         
-        return self.lookup[idx]
+        return (self.id_list[idx], self.positive_list[idx], self.data.getNegatives(None, 5))
 
     @staticmethod
     def collate(batches):
@@ -157,4 +158,4 @@ class Word2vecDataset(Dataset):
         # each element tuple vertically into 3 long tuples
         all_u,all_v,all_neg_v = zip(*batches)
 
-        return torch.IntTensor(all_u), torch.IntTensor(all_v), torch.IntTensor(all_neg_v)
+        return torch.LongTensor(all_u), torch.LongTensor(all_v), torch.LongTensor(all_neg_v)

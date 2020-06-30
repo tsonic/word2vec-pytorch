@@ -44,6 +44,7 @@ class Word2VecTrainer:
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(self.dataloader))
 
             running_loss = 0.0
+            iprint = len(self.dataloader) // 20
             for i, sample_batched in enumerate(tqdm(self.dataloader)):
 
                 if len(sample_batched[0]) > 1:
@@ -57,8 +58,8 @@ class Word2VecTrainer:
                     loss.backward()
                     optimizer.step()
 
-                    running_loss = running_loss * 0.9 + loss.item() * 0.1
-                    if i > 0 and i % self.iprint == 0:
+                    running_loss = running_loss * (1 - 5/iprint) + loss.item() * (5/iprint)
+                    if i > 0 and i % iprint == 0:
                         print(" Loss: " + str(running_loss))
             print(" Loss: " + str(running_loss))
 

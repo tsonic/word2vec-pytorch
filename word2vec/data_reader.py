@@ -12,7 +12,7 @@ np.random.seed(12345)
 
 class DataReader:
 
-    NEGATIVE_TABLE_SIZE = 1e8
+    NEGATIVE_TABLE_SIZE = 5e8
 
     def __init__(self, inputFileName, min_count,t=1e-4,ns_exponent=0.5):
 
@@ -139,6 +139,8 @@ class Word2vecDataset(Dataset):
         self.positive_list = df['positive'].values
         print('Dataload initializing finished!', flush=True)
 
+        self.negative_collision = 0
+
 
     def __len__(self):
         # return self.data.sentences_count
@@ -149,7 +151,12 @@ class Word2vecDataset(Dataset):
         # if len(self.words) > 1:
         #     word_ids = [self.data.word2id[w] for w in words if
         #                 w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
-        
+        negs = self.data.getNegatives(None, 5)
+        while self.positive_list[idx] in self.data.getNegatives(None, 5):
+            self.negative_collision += 1
+            if self.negative_collision % 100:
+                print('positive collide with negative for %d' % self.negative_collision)
+            negs = self.data.getNegatives(None, 5)
         return (self.id_list[idx], self.positive_list[idx], self.data.getNegatives(None, 5))
 
     @staticmethod

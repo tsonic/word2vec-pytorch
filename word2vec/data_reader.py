@@ -14,7 +14,7 @@ class DataReader:
 
     NEGATIVE_TABLE_SIZE = 1e8
 
-    def __init__(self, inputFileName, min_count):
+    def __init__(self, inputFileName, min_count,t=1e-4,ns_exponent=0.5):
 
         self.negatives = []
         self.discards = []
@@ -28,8 +28,8 @@ class DataReader:
 
         self.inputFileName = inputFileName
         self.read_words(min_count)
-        self.initTableNegatives()
-        self.initTableDiscards()
+        self.initTableNegatives(ns_exponent=ns_exponent)
+        self.initTableDiscards(t=t)
 
     def read_words(self, min_count):
         word_frequency = dict()
@@ -55,22 +55,21 @@ class DataReader:
             wid += 1
         print("Total embeddings: " + str(len(self.word2id)))
 
-    def initTableDiscards(self):
-        t = 0.0001
-        f = np.array(self.word_frequency) / self.token_count
+    def initTableDiscards(self,t):
+        f = np.array(self.word_frequency, dtype = float) / self.token_count
         self.discards = np.sqrt(t / f) + (t / f)
 
-    def initTableNegatives(self):
+    def initTableNegatives(self, ns_exponent):
         print('Initializing negative samples', flush=True)
-        pow_frequency = np.array(self.word_frequency) ** 0.5
+        pow_frequency = np.array(self.word_frequency) ** ns_exponent
         words_pow = sum(pow_frequency)
         ratio = pow_frequency / words_pow
         count = np.round(ratio * DataReader.NEGATIVE_TABLE_SIZE)#.astype(np.int32)
         # for wid, c in enumerate(count):
         #     self.negatives += [wid] * int(c)
         df = pd.DataFrame.from_records(enumerate(count))
+        # the column 0 is the word index, column 1 is the count of the word
         self.negatives = np.repeat(df[0].values, df[1].astype(int).values)
-        #self.negatives = np.array(self.negatives, dtype=np.int32)
         np.random.shuffle(self.negatives)
 
     def getNegatives(self, target, size):  # TODO check equality with target
@@ -93,20 +92,26 @@ class Word2vecDataset(Dataset):
             lines = f.readlines()
             self.words = list(itertools.chain(*[l.split() for l in lines]))
             self.words = [w for w in self.words if w in self.data.word2id]
+            
         boundary = self.window_size
         df_list = []
         print('Creating training dataframe...', flush=True)
         df_short = pd.DataFrame({'word':self.words})
         df_short['id'] = df_short['word'].map(self.data.word2id)
-        df_short.drop('word', axis=1, inplace=True)
+        df_short['discard_limit'] = df_short['id'].map({i:limit for i, limit in enumerate(self.data.discards)})
+#        df_short.drop('word', axis=1, inplace=True)
         for i in range(-boundary, boundary + 1):
             if i == 0:
                 continue
             
             df = df_short.copy()
+            df['keep'] = np.random.rand(len(df)) <  df['discard_limit']
+            print('keep ratio is %f' % df['keep'].mean())
+            print('sample of discard words are :' + str(df.query('not keep')['word'].sample(n=5).tolist()))
             df['positive'] = df['id'].shift(i)
             df = df.dropna(subset=['positive'])
-            df = df.query('id != positive')
+            df = df.query('id != positive and keep')
+            df.drop(columns=['discard_limit','keep','word'])
             # # efficient remove of na
             # if i > 0:
             #     df = df.iloc[i:,]

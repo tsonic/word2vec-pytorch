@@ -154,10 +154,10 @@ class Word2vecDataset(Dataset):
         negs = self.data.getNegatives(None, 5)
         while self.positive_list[idx] in self.data.getNegatives(None, 5):
             self.negative_collision += 1
-            if self.negative_collision % 100:
+            if self.negative_collision % 1000 == 0:
                 print('positive collide with negative for %d' % self.negative_collision)
             negs = self.data.getNegatives(None, 5)
-        return (self.id_list[idx], self.positive_list[idx], self.data.getNegatives(None, 5))
+        return (self.id_list[idx], self.positive_list[idx], negs)
 
     @staticmethod
     def collate(batches):

@@ -111,7 +111,7 @@ class Word2vecDataset(Dataset):
             df['positive'] = df['id'].shift(i)
             df = df.dropna(subset=['positive'])
             df = df.query('id != positive and keep')
-            df.drop(columns=['discard_limit','keep','word'])
+            df.drop(columns=['discard_limit','keep','word'], inplace = True)
             # # efficient remove of na
             # if i > 0:
             #     df = df.iloc[i:,]
@@ -142,7 +142,7 @@ class Word2vecDataset(Dataset):
 
     def __len__(self):
         # return self.data.sentences_count
-        return len(self.words)
+        return len(self.id_list)
 
     def __getitem__(self, idx):
 

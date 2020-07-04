@@ -20,7 +20,8 @@ class SkipGramModel(nn.Module):
 
         initrange = 1.0 / self.emb_dimension
         init.uniform_(self.u_embeddings.weight.data, -initrange, initrange)
-        init.constant_(self.v_embeddings.weight.data, 0)
+        #init.constant_(self.v_embeddings.weight.data, 0)
+        init.uniform_(self.v_embeddings.weight.data, -initrange, initrange)
 
     def forward(self, pos_u, pos_v, neg_v):
         emb_u = self.u_embeddings(pos_u)

@@ -48,7 +48,10 @@ class Word2VecTrainer:
             if self.optimizer == 'adam':
                 optimizer = optim.SparseAdam(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
             elif self.optimizer == 'sgd':
+                print('new sgd')
                 optimizer = optim.SGD(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
+            elif self.optimizer == 'adagrad':
+                optimizer = optim.Adagrad(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
             else:
                 raise Exception('Unknown optimizer!')
 

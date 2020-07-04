@@ -10,7 +10,7 @@ from word2vec.model import SkipGramModel
 class Word2VecTrainer:
     def __init__(self, input_file, output_file, emb_dimension=100, batch_size=32, window_size=5, iterations=3,
                  initial_lr=0.001, min_count=12, num_workers=0, collate_fn='custom', iprint=500, t=1e-3, ns_exponent=0.75, 
-                 optimizer='adam'):
+                 optimizer='adam', optimizer_kwargs = None):
 
 
         self.data = DataReader(input_file, min_count,t=t, ns_exponent=ns_exponent)
@@ -31,6 +31,9 @@ class Word2VecTrainer:
         self.initial_lr = initial_lr
         self.skip_gram_model = SkipGramModel(self.emb_size, self.emb_dimension)
         self.optimizer = optimizer
+        if optimizer_kwargs is None:
+            optimizer_kwargs = {}
+        self.optimizer_kwargs = optimizer_kwargs
 
         self.use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
@@ -43,9 +46,9 @@ class Word2VecTrainer:
 
             print("\n\n\nIteration: " + str(iteration + 1))
             if self.optimizer == 'adam':
-                optimizer = optim.SparseAdam(self.skip_gram_model.parameters(), lr=self.initial_lr)
+                optimizer = optim.SparseAdam(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
             elif self.optimizer == 'sgd':
-                optimizer = optim.SGD(self.skip_gram_model.parameters(), lr=self.initial_lr)
+                optimizer = optim.SGD(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
             else:
                 raise Exception('Unknown optimizer!')
 

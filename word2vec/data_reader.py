@@ -152,9 +152,9 @@ class Word2vecDataset(Dataset):
         #     word_ids = [self.data.word2id[w] for w in words if
         #                 w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
         negs = self.data.getNegatives(None, 5)
-        while self.positive_list[idx] in self.data.getNegatives(None, 5):
+        while self.positive_list[idx] in negs:
             self.negative_collision += 1
-            if self.negative_collision % 1000 == 0:
+            if self.negative_collision % 100000 == 0:
                 print('positive collide with negative for %d' % self.negative_collision)
             negs = self.data.getNegatives(None, 5)
         return (self.id_list[idx], self.positive_list[idx], negs)

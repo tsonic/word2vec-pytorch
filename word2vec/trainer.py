@@ -38,7 +38,7 @@ class Word2VecTrainer:
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
         self.optimizer_kwargs = optimizer_kwargs
-
+        self.lr_schedule = lr_schedule
         self.use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
         if self.use_cuda:
@@ -61,7 +61,7 @@ class Word2VecTrainer:
 
             print("\n\n\nIteration: " + str(iteration + 1))
 
-            if lr_schedule:
+            if self.lr_schedule:
                 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(self.dataloader))
             running_loss = 0.0
             iprint = len(self.dataloader) // 20
@@ -76,7 +76,7 @@ class Word2VecTrainer:
                     loss = self.skip_gram_model.forward(pos_u, pos_v, neg_v)
                     loss.backward()
                     optimizer.step()
-                    if lr_schedule:
+                    if self.lr_schedule:
                         scheduler.step()
 
                     running_loss = running_loss * (1 - 5/iprint) + loss.item() * (5/iprint)

@@ -10,7 +10,7 @@ from word2vec.model import SkipGramModel
 class Word2VecTrainer:
     def __init__(self, input_file, output_file, emb_dimension=100, batch_size=32, window_size=5, iterations=3,
                  initial_lr=0.001, min_count=12, num_workers=0, collate_fn='custom', iprint=500, t=1e-3, ns_exponent=0.75, 
-                 optimizer='adam', optimizer_kwargs = None, warm_start_model = None):
+                 optimizer='adam', optimizer_kwargs = None, warm_start_model = None, lr_schedule = True):
 
 
         self.data = DataReader(input_file, min_count,t=t, ns_exponent=ns_exponent)
@@ -61,8 +61,8 @@ class Word2VecTrainer:
 
             print("\n\n\nIteration: " + str(iteration + 1))
 
-        
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(self.dataloader))
+            if lr_schedule:
+                scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(self.dataloader))
             running_loss = 0.0
             iprint = len(self.dataloader) // 20
             for i, sample_batched in enumerate(tqdm(self.dataloader)):
@@ -76,7 +76,8 @@ class Word2VecTrainer:
                     loss = self.skip_gram_model.forward(pos_u, pos_v, neg_v)
                     loss.backward()
                     optimizer.step()
-                    scheduler.step()
+                    if lr_schedule:
+                        scheduler.step()
 
                     running_loss = running_loss * (1 - 5/iprint) + loss.item() * (5/iprint)
                     if i > 0 and i % iprint == 0:

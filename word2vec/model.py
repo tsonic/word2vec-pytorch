@@ -20,7 +20,6 @@ class SkipGramModel(nn.Module):
 
         initrange = 1.0 / self.emb_dimension
         init.uniform_(self.u_embeddings.weight.data, -initrange, initrange)
-        #init.constant_(self.v_embeddings.weight.data, 0)
         init.uniform_(self.v_embeddings.weight.data, -initrange, initrange)
 
     def forward(self, pos_u, pos_v, neg_v):
@@ -35,10 +34,6 @@ class SkipGramModel(nn.Module):
         neg_score = torch.bmm(emb_neg_v, emb_u.unsqueeze(2)).squeeze()
         neg_score = torch.clamp(neg_score, max=10, min=-10)
         neg_score = -torch.sum(F.logsigmoid(-neg_score), dim=1)
-
-        # neg_score = torch.sum(torch.mul(emb_u, emb_neg_v), dim=1)
-        # neg_score = torch.clamp(neg_score, max=10, min=-10)
-        # neg_score = -torch.sum(F.logsigmoid(-neg_score))
 
         return torch.mean(score + neg_score)
 

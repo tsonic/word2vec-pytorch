@@ -71,7 +71,6 @@ class Word2VecTrainer:
                     pos_u = sample_batched[0].to(self.device)
                     pos_v = sample_batched[1].to(self.device)
                     neg_v = sample_batched[2].to(self.device)
-
                     
                     optimizer.zero_grad()
                     loss = self.skip_gram_model.forward(pos_u, pos_v, neg_v)

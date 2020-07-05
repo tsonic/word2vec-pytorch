@@ -64,9 +64,8 @@ class DataReader:
         pow_frequency = np.array(self.word_frequency) ** ns_exponent
         words_pow = sum(pow_frequency)
         ratio = pow_frequency / words_pow
-        count = np.round(ratio * DataReader.NEGATIVE_TABLE_SIZE)#.astype(np.int32)
-        # for wid, c in enumerate(count):
-        #     self.negatives += [wid] * int(c)
+        count = np.round(ratio * DataReader.NEGATIVE_TABLE_SIZE)
+
         df = pd.DataFrame.from_records(enumerate(count))
         # the column 0 is the word index, column 1 is the count of the word
         self.negatives = np.repeat(df[0].astype(np.int64).values, df[1].astype(np.int64).values)
@@ -87,7 +86,6 @@ class Word2vecDataset(Dataset):
         self.data = data
         self.window_size = window_size
         print('monitor multi-worker')
-        #self.input_file = open(data.inputFileName, encoding="utf8")
         with open(data.inputFileName, encoding="utf8") as f:
             print('Creating words list...', flush=True)
             lines = f.readlines()
@@ -100,7 +98,6 @@ class Word2vecDataset(Dataset):
         df_short = pd.DataFrame({'word':self.words})
         df_short['id'] = df_short['word'].map(self.data.word2id).astype(np.int64)
         df_short['discard_limit'] = df_short['id'].map({i:limit for i, limit in enumerate(self.data.discards)})
-#        df_short.drop('word', axis=1, inplace=True)
         for i in range(-boundary, boundary + 1):
             if i == 0:
                 continue
@@ -113,11 +110,7 @@ class Word2vecDataset(Dataset):
             df = df.dropna(subset=['positive'])
             df = df.query('id != positive and keep')
             df = df.drop(columns=['discard_limit','keep','word'])
-            # # efficient remove of na
-            # if i > 0:
-            #     df = df.iloc[i:,]
-            # elif i < 0:
-            #     df = df.iloc[:i,]
+
             df_list.append(df)
         df = pd.concat(df_list)
         del df_list, lines, df_short
@@ -125,17 +118,7 @@ class Word2vecDataset(Dataset):
         print('Shuffling samples...', flush=True)
         df = df.sample(frac=1.0, replace=False)
         print('Creating negative samples...', flush=True)
-        # neg= self.data.getNegatives(None, len(df) * 5)
-        # self.data.negatives = None
-        # gc.collect()
-        # neg_reshape = neg.reshape((len(df),5))
-        # neg_reshape_list = list(neg_reshape)
-        # df['negative'] = neg_reshape_list
-        # del neg, neg_reshape, neg_reshape_list
-        # gc.collect()
 
-        # print('Generating sample look up tables...', flush=True)
-        # self.lookup = list(df.itertuples(index=False, name=None))
         self.id_list = df['id'].astype(np.int64).values
         self.positive_list = df['positive'].astype(np.int64).values
         print('Dataload initializing finished!', flush=True)
@@ -144,45 +127,18 @@ class Word2vecDataset(Dataset):
 
 
     def __len__(self):
-        # return self.data.sentences_count
         return len(self.id_list)
 
     def __getitem__(self, idx):
-
-        # if len(self.words) > 1:
-        #     word_ids = [self.data.word2id[w] for w in words if
-        #                 w in self.data.word2id and np.random.rand() < self.data.discards[self.data.word2id[w]]]
-        #negs = self.data.getNegatives(None, 5)
-        # while self.positive_list[idx] in negs:
-        #     self.negative_collision += 1
-        #     if self.negative_collision % 100000 == 0:
-        #         print('positive collide with negative for %d' % self.negative_collision, flush=True)
-        #     negs = self.data.getNegatives(None, 5)
-        #worker_info = get_worker_info()
-        #print(f'worker_id: {worker_info.id}, sample_idx: {idx}, negs: {negs}', flush=True)
-
         return idx
-        #np.array([self.id_list[idx], self.positive_list[idx]])
-        
-        #(self.id_list[idx], self.positive_list[idx], negs)
 
     def collate(self,batches):
-        # all_u = [u for batch in batches for u, _, _ in batch if len(batch) > 0]
-        # all_v = [v for batch in batches for _, v, _ in batch if len(batch) > 0]
-        # all_neg_v = [neg_v for batch in batches for _, _, neg_v in batch if len(batch) > 0]
-
-        # batches is a list of list, first flatten to single list, then split 
-        # each element tuple vertically into 3 long tuples
-        # all_u,all_v,all_neg_v = zip(*batches)
-
-        #all_data = np.stack(batches)
 
         negs = self.data.getNegatives(None, len(batches) * 5).reshape((len(batches), 5))
         st = batches[0]
         ed = batches[-1] + 1
 
         return torch.LongTensor(self.id_list[st:ed]), torch.LongTensor(self.positive_list[st:ed]), torch.from_numpy(negs)
-        # torch.LongTensor(all_u), torch.LongTensor(all_v), torch.LongTensor(all_neg_v)
     
     @staticmethod
     def worker_init_fn(_):

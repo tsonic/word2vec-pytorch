@@ -1,6 +1,6 @@
 import torch
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, get_worker_info
 from tqdm import tqdm
 
 from word2vec.data_reader import DataReader, Word2vecDataset
@@ -10,7 +10,7 @@ from word2vec.model import SkipGramModel
 class Word2VecTrainer:
     def __init__(self, input_file, output_file, emb_dimension=100, batch_size=32, window_size=5, iterations=3,
                  initial_lr=0.001, min_count=12, num_workers=0, collate_fn='custom', iprint=500, t=1e-3, ns_exponent=0.75, 
-                 optimizer='adam', optimizer_kwargs = None):
+                 optimizer='adam', optimizer_kwargs = None, warm_start_model = None):
 
 
         self.data = DataReader(input_file, min_count,t=t, ns_exponent=ns_exponent)
@@ -20,7 +20,8 @@ class Word2VecTrainer:
         else:
             collate_fn = None
         self.dataloader = DataLoader(dataset, batch_size=batch_size,
-                                     shuffle=False, num_workers=num_workers, collate_fn=collate_fn)
+                                     shuffle=False, num_workers=num_workers, 
+                                     collate_fn=collate_fn, worker_init_fn=dataset.worker_init_fn)
 
         self.output_file_name = output_file
         self.emb_size = len(self.data.word2id)
@@ -30,6 +31,9 @@ class Word2VecTrainer:
         self.iterations = iterations
         self.initial_lr = initial_lr
         self.skip_gram_model = SkipGramModel(self.emb_size, self.emb_dimension)
+
+        if warm_start_model is not None:
+            self.skip_gram_model.load_state_dict(torch.load(warm_start_model), strict=False)
         self.optimizer = optimizer
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
@@ -41,20 +45,23 @@ class Word2VecTrainer:
             self.skip_gram_model.cuda()
 
     def train(self):
+        if self.optimizer == 'adam':
+            optimizer = optim.Adam(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
+        elif self.optimizer == 'sgd':
+            print('new sgd')
+            optimizer = optim.SGD(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
+        elif self.optimizer == 'asgd':
+            optimizer = optim.ASGD(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
+        elif self.optimizer == 'adagrad':
+            optimizer = optim.Adagrad(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
+        else:
+            raise Exception('Unknown optimizer!')
 
         for iteration in range(self.iterations):
 
             print("\n\n\nIteration: " + str(iteration + 1))
-            if self.optimizer == 'adam':
-                optimizer = optim.SparseAdam(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
-            elif self.optimizer == 'sgd':
-                print('new sgd')
-                optimizer = optim.SGD(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
-            elif self.optimizer == 'adagrad':
-                optimizer = optim.Adagrad(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
-            else:
-                raise Exception('Unknown optimizer!')
 
+        
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, len(self.dataloader))
             running_loss = 0.0
             iprint = len(self.dataloader) // 20
@@ -74,11 +81,12 @@ class Word2VecTrainer:
 
                     running_loss = running_loss * (1 - 5/iprint) + loss.item() * (5/iprint)
                     if i > 0 and i % iprint == 0:
-                        print(" Loss: " + str(running_loss) + 'lr: ' 
+                        print(" Loss: " + str(running_loss) + ' lr: ' 
                             + str([param_group['lr'] for param_group in optimizer.param_groups]))
             print(" Loss: " + str(running_loss))
 
             self.skip_gram_model.save_embedding(self.data.id2word, self.output_file_name)
+        
 
 
 if __name__ == '__main__':

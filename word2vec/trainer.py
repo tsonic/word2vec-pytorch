@@ -47,6 +47,8 @@ class Word2VecTrainer:
     def train(self):
         if self.optimizer == 'adam':
             optimizer = optim.Adam(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
+        elif self.optimizer == 'sparse_adam':
+            optimizer = optim.SparseAdam(self.model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)
         elif self.optimizer == 'sgd':
             print('new sgd')
             optimizer = optim.SGD(self.skip_gram_model.parameters(), lr=self.initial_lr, **self.optimizer_kwargs)

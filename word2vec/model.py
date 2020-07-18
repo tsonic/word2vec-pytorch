@@ -18,6 +18,8 @@ class SkipGramModel(nn.Module):
         self.u_embeddings = nn.Embedding(emb_size, emb_dimension, sparse=False)
         self.v_embeddings = nn.Embedding(emb_size, emb_dimension, sparse=False)
 
+        #self.linear = torch.nn.Linear(emb_size, 1)
+
         initrange = 1.0 / self.emb_dimension
         init.uniform_(self.u_embeddings.weight.data, -initrange, initrange)
         init.uniform_(self.v_embeddings.weight.data, -initrange, initrange)

@@ -10,7 +10,7 @@ from word2vec.model import SkipGramModel
 class Word2VecTrainer:
     def __init__(self, input_file, output_file, emb_dimension=100, batch_size=32, window_size=5, iterations=3,
                  initial_lr=0.001, min_count=12, num_workers=0, collate_fn='custom', iprint=500, t=1e-3, ns_exponent=0.75, 
-                 optimizer='adam', optimizer_kwargs = None, warm_start_model = None, lr_schedule = True):
+                 optimizer='adam', optimizer_kwargs = None, warm_start_model = None, lr_schedule = True, sparse = True):
 
 
         self.data = DataReader(input_file, min_count,t=t, ns_exponent=ns_exponent)
@@ -30,7 +30,7 @@ class Word2VecTrainer:
         self.batch_size = batch_size
         self.iterations = iterations
         self.initial_lr = initial_lr
-        self.skip_gram_model = SkipGramModel(self.emb_size, self.emb_dimension)
+        self.skip_gram_model = SkipGramModel(self.emb_size, self.emb_dimension, sparse = sparse)
 
         if warm_start_model is not None:
             self.skip_gram_model.load_state_dict(torch.load(warm_start_model), strict=False)

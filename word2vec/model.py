@@ -11,12 +11,12 @@ from torch.nn import init
 
 class SkipGramModel(nn.Module):
 
-    def __init__(self, emb_size, emb_dimension):
+    def __init__(self, emb_size, emb_dimension, sparse):
         super(SkipGramModel, self).__init__()
         self.emb_size = emb_size
         self.emb_dimension = emb_dimension
-        self.u_embeddings = nn.Embedding(emb_size, emb_dimension, sparse=False)
-        self.v_embeddings = nn.Embedding(emb_size, emb_dimension, sparse=False)
+        self.u_embeddings = nn.Embedding(emb_size, emb_dimension, sparse=sparse)
+        self.v_embeddings = nn.Embedding(emb_size, emb_dimension, sparse=sparse)
 
         #self.linear = torch.nn.Linear(emb_size, 1)
 

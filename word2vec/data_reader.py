@@ -21,7 +21,7 @@ class DataReader:
         self.negpos = 0
 
         self.word2id = dict()
-        self.id2word = dict()
+        self.id2word = []
         self.sentences_count = 0
         self.token_count = 0
         self.word_frequency = []
@@ -50,7 +50,7 @@ class DataReader:
             if c < min_count:
                 continue
             self.word2id[w] = wid
-            self.id2word[wid] = w
+            self.id2word.append(w)
             self.word_frequency.append(c)
             wid += 1
         print("Total embeddings: " + str(len(self.word2id)))
